@@ -6,8 +6,11 @@ typedef enum ModulatorType {
 	SHIFTREGISTER
 }ModulatorType;
 
+//
+//Modulator types
+//
+
 typedef struct ModWave {
-	const char *name;
 	float amplitude;
 	float frequency;
 	uint64_t time;
@@ -31,7 +34,7 @@ typedef struct ModScalarGoalFollower {
 	float threshold;
 	float vel_threshold;
 	uint64_t pause_range[2];
-	void *follower; //TODO: investigate if this is the best way of linking to a specific modulator
+	Modulator *follower; 
 	size_t current_region;
 	uint64_t paused_left;
 	uint64_t time;
@@ -65,6 +68,23 @@ typedef struct ModShiftRegister {
 	float value;
 	bool enabled;
 }ModShiftRegister;
+
+typedef struct Modulator {
+	const char *name;
+	ModulatorType type;
+	union {
+		ModWave wave;
+		ModScalarSpring scalar_spring;
+		ModScalarGoalFollower scalar_goal_follower;
+		ModNewtonian newtonian;
+		ModShiftRegister shift_register;
+	};
+}Modulator;
+
+//
+//Modulator memory management
+//
+
 
 Arena *modulator_arna = NULL;
 Map *modulator_list = NULL;
