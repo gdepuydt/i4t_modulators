@@ -33,8 +33,14 @@ typedef struct PauseRange {
 	float max;
 }PauseRange;
 
+typedef struct Region {
+	float min;
+	float max;
+}Region;
+
+
 typedef struct ModScalarGoalFollower{
-	float **regions;
+	Region *regions;
 	bool random_region;
 	float threshold;
 	float vel_threshold;
@@ -99,8 +105,8 @@ typedef struct AgeRange {
 }AgeRange;
 
 typedef struct ModShiftRegister {
-	float **buckets; //TODO: array of buckets ->stretch_buf
-	uint32_t **ages; //TODO: symmetrical array ->stretchy_buf
+	float *buckets; //TODO: array of buckets ->stretch_buf
+	uint32_t *value_ages; //TODO: symmetrical array ->stretchy_buf
 	ValueRange value_range;
 	float odds;
 	AgeRange age_range;
@@ -191,11 +197,19 @@ Modulator *newtonian(const char *name, SpeedLimitRange speed_limit_range, Accele
 	return m;
 }
 
+void new_buckets(const void *buffer, size_t buckets, ValueRange value_range) {
+	//TODO: initialize size_t buckets with a valuerange
+}
+
 Modulator *shift_register(const char *name, size_t buckets, ValueRange value_range, float odds, float period, ShiftRegisterInterp interp) {
 	Modulator *m = new_modulator(name, SHIFTREGISTER);
-	m->shift_register.buckets = 0; //TODO innitialize as a stretchy buf
+	
+	m->shift_register.buckets = NULL; 
+	new_buckets(m->shift_register.buckets, buckets, value_range);
+	
 	float v = 0; //give a value based on the first bucket, or else 0
-	m->shift_register.ages = 0; //TODO: create a 0 initialized stretchy buf based on the number of buckets
+	m->shift_register.value_ages = 0; //TODO: create a 0 initialized stretchy buf based on the number of buckets
+	
 	m->shift_register.value_range = value_range;
 	m->shift_register.odds = odds;
 	m->shift_register.age_range = (AgeRange){ UINT32_MAX, UINT32_MAX };  
