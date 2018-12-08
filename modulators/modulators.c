@@ -10,6 +10,8 @@ typedef enum ModulatorType {
 //Modulator types
 //
 
+typedef struct Modulator Modulator;
+
 typedef struct ModWave {
 	float amplitude;
 	float frequency;
@@ -88,6 +90,7 @@ typedef struct ModNewtonian {
 	PhaseTime phase;
 }ModNewtonian;
 
+
 typedef enum ShiftRegisterInterp{
 	LINEAR,
 	QUADRATIC,
@@ -117,6 +120,7 @@ typedef struct ModShiftRegister {
 	bool enabled;
 }ModShiftRegister;
 
+
 typedef struct Modulator {
 	const char *name;
 	ModulatorType type;
@@ -133,9 +137,6 @@ typedef struct Modulator {
 //Modulator memory management
 //
 
-
-Arena *modulator_arna = NULL;
-Map *modulator_list = NULL;
 
 Modulator *new_modulator(const char *name, ModulatorType type) {
 	Modulator *mod = xmalloc(sizeof(Modulator));
@@ -217,6 +218,16 @@ Modulator *shift_register(const char *name, size_t buckets, ValueRange value_ran
 	m->shift_register.interp = interp;
 	m->shift_register.time = 0;
 	m->shift_register.value = v;
+}
+
+Modulator *modulator(const char *name, Modulator **env) {
+	for (Modulator **it = env; it != buf_end(env); it++) {
+		Modulator *mod = *it;
+		if (strcmp(mod->name, name) == 0) {
+			return mod;
+		}
+	}
+	return NULL;
 }
 
 
