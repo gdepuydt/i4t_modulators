@@ -152,6 +152,45 @@ Modulator *scalar_goal_follower(const char *name) {
 	return m;
 }
 
+void reset(Modulator *m, float value) {
+	if (m->type == NEWTONIAN) {
+		m->newtonian.value = value;
+		m->newtonian.goal = value;
+		m->newtonian.s = 0.0;
+		m->newtonian.a = 0.0;
+		m->newtonian.d = 0.0;
+		m->newtonian.f = value;
+		m->newtonian.phase = (PhaseTime) { 0.0, 0.0, 0.0 };
+	}
+	else exit(1); //TODO: better error handling?
+	
+}
+
+float gen_value(ValueRange range) {
+	return RNDRNG(range.min, range.max);
+}
+
+void calculate_events(Modulator *m) {
+	if (m->type == NEWTONIAN) {
+		//TODO
+	}
+}
+
+void move_to(Modulator *m, float goal) {
+	if (m->type == NEWTONIAN) {
+		m->newtonian.time = 0;
+		m->newtonian.goal = goal;
+
+		m->newtonian.s = gen_value(m->newtonian.speed_limit_range);
+		m->newtonian.a = gen_value(m->newtonian.acceleration_range);
+		m->newtonian.d = gen_value(m->newtonian.deceleration_range);
+		m->newtonian.f = m->newtonian.value;
+
+		calculate_events(m);
+	}
+}
+
+
 Modulator *newtonian(const char *name, ValueRange speed_limit_range, ValueRange acceleration_range, ValueRange deceleration_range, float initial) {
 	Modulator *m = new_modulator(name, NEWTONIAN);
 	m->newtonian.speed_limit_range = speed_limit_range;
@@ -171,46 +210,57 @@ Modulator *newtonian(const char *name, ValueRange speed_limit_range, ValueRange 
 
 void new_buckets(float *buffer, size_t buckets, ValueRange value_range) {
 	for (int current_bucket = 0; current_bucket < buckets; current_bucket++) {
-		float range = value_range.max - value_range.min;
-		float x = ((float)rand() / (float)(RAND_MAX / range)) + value_range.min; //TODO: test this!
+		float x = RNDRNG(value_range.min, value_range.max);
 		buf_push(buffer, x); 
 	}
 }
 
 // Total time of a shift register loop (period) in microseconds
 uint64_t total_period(Modulator *m) {
-	return (uint64_t)(m->shift_register.period * 1000000.0);
+	if (m->type == SHIFTREGISTER) {
+		return (uint64_t)(m->shift_register.period * 1000000.0);
+	}
+	exit(1); //TODO: better error handling
 }
 
 // Time spent visiting a bucket, in microseconds
 uint64_t bucket_period(Modulator *m) {
-	size_t n = buf_len(m->shift_register.buckets);
-	if (n > 0) {
-		return (uint64_t)(total_period(m) / n);
+	if (m->type == SHIFTREGISTER) {
+		size_t n = buf_len(m->shift_register.buckets);
+		if (n > 0) {
+			return (uint64_t)(total_period(m) / n);
+		}
+		else return 0;
 	}
-	else return 0;
+	exit(1);
 }
 
 // Return the bucket index after the one we are given
 size_t next_bucket(Modulator *m, size_t index) {
-	size_t len = buf_len(m->shift_register.buckets);
-	if (len > 0) {
-		if (index < len - 1) {
-			return index + 1;
+	if (m->type == SHIFTREGISTER) {
+		size_t len = buf_len(m->shift_register.buckets);
+		if (len > 0) {
+			if (index < len - 1) {
+				return index + 1;
+			}
 		}
 	}
+	exit(1);
 }
 
 // Return the bucket index before the one we are given
 size_t previous_bucket(Modulator *m, size_t index) {
-	size_t len = buf_len(m->shift_register.buckets);
-	if (len > 0) {
-		if (index > 0 && index < len) {
-			return index - 1;
+	if (m->type == SHIFTREGISTER) {
+		size_t len = buf_len(m->shift_register.buckets);
+		if (len > 0) {
+			if (index > 0 && index < len) {
+				return index - 1;
+			}
+			else return len - 1;
 		}
-		else return len - 1;
+		return NULL; //TODO: not sure this is good practice --> maybe do fatal error here?
 	}
-	return NULL; //TODO: not sure this is good practice --> maybe do fatal error here?
+	exit(1);
 }
 
 
