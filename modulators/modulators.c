@@ -172,6 +172,9 @@ float gen_value(ValueRange range) {
 
 void calculate_events(Modulator *m) {
 	if (m->type == NEWTONIAN) {
+		float x = m->newtonian.goal - m->newtonian.f;
+	}
+	if (m->newtonian.a < FLT_EPSILON) {
 		//TODO
 	}
 }
