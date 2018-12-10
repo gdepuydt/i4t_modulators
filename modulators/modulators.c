@@ -198,17 +198,26 @@ Modulator *newtonian(const char *name, SpeedLimitRange speed_limit_range, Accele
 	return m;
 }
 
-void new_buckets(const void *buffer, size_t buckets, ValueRange value_range) {
-	//TODO: initialize size_t buckets with a valuerange
+void new_buckets(float *buffer, size_t buckets, ValueRange value_range) {
+	for (int current_bucket = 0; current_bucket < buckets; current_bucket++) {
+		buf_push(buffer, value_range.max); //not correct: must be random value wwihin the provided range for each bucket!
+	}
 }
 
 Modulator *shift_register(const char *name, size_t buckets, ValueRange value_range, float odds, float period, ShiftRegisterInterp interp) {
 	Modulator *m = new_modulator(name, SHIFTREGISTER);
 	
+
 	m->shift_register.buckets = NULL; 
 	new_buckets(m->shift_register.buckets, buckets, value_range);
+	float v;
+	if (buf_len(m->shift_register.buckets) > 0) {
+		 v = m->shift_register.buckets[0]; //not correct, must be the random value 
+	}
+	else {
+		v = 0.0;
+	}
 	
-	float v = 0; //give a value based on the first bucket, or else 0
 	m->shift_register.value_ages = 0; //TODO: create a 0 initialized stretchy buf based on the number of buckets
 	
 	m->shift_register.value_range = value_range;
