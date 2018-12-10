@@ -108,8 +108,8 @@ typedef struct AgeRange {
 }AgeRange;
 
 typedef struct ModShiftRegister {
-	float *buckets; //TODO: array of buckets ->stretch_buf
-	uint32_t *value_ages; //TODO: symmetrical array ->stretchy_buf
+	float *buckets; 
+	uint32_t *value_ages;
 	ValueRange value_range;
 	float odds;
 	AgeRange age_range;
@@ -168,7 +168,7 @@ Modulator *scalar_spring(const char *name, float smooth, float undamp, float ini
 
 Modulator *scalar_goal_follower(const char *name) {
 	Modulator *m = new_modulator(name, SCALARGOALFOLLOWER);
-	m->scalar_goal_follower.regions= NULL; //TODO -> array of arrays
+	m->scalar_goal_follower.regions= NULL; //array of arrays
 	m->scalar_goal_follower.random_region = false;
 	m->scalar_goal_follower.threshold = 0.01;
 	m->scalar_goal_follower.vel_threshold = 0.0001;
@@ -206,12 +206,50 @@ void new_buckets(float *buffer, size_t buckets, ValueRange value_range) {
 	}
 }
 
+// Total time of a shift register loop (period) in microseconds
+uint64_t total_period(Modulator *m) {
+	return (uint64_t)(m->shift_register.period * 1000000.0);
+}
+
+// Time spent visiting a bucket, in microseconds
+uint64_t bucket_period(Modulator *m) {
+	size_t n = buf_len(m->shift_register.buckets);
+	if (n > 0) {
+		return (uint64_t)(total_period(m) / n);
+	}
+	else return 0;
+}
+
+// Return the bucket index after the one we are given
+size_t next_bucket(Modulator *m, size_t index) {
+	size_t len = buf_len(m->shift_register.buckets);
+	if (len > 0) {
+		if (index < len - 1) {
+			return index + 1;
+		}
+	}
+}
+
+// Return the bucket index before the one we are given
+size_t previous_bucket(Modulator *m, size_t index) {
+	size_t len = buf_len(m->shift_register.buckets);
+	if (len > 0) {
+		if (index > 0 && index < len) {
+			return index - 1;
+		}
+		else return len - 1;
+	}
+	return NULL; //TODO: not sure this is good practice --> maybe do fatal error here?
+}
+
+
 Modulator *shift_register(const char *name, size_t buckets, ValueRange value_range, float odds, float period, ShiftRegisterInterp interp) {
 	Modulator *m = new_modulator(name, SHIFTREGISTER);
 	
 
 	m->shift_register.buckets = NULL; 
 	new_buckets(m->shift_register.buckets, buckets, value_range);
+	
 	float v;
 	if (buf_len(m->shift_register.buckets) > 0) {
 		 v = m->shift_register.buckets[0]; 
@@ -220,7 +258,7 @@ Modulator *shift_register(const char *name, size_t buckets, ValueRange value_ran
 		v = 0.0;
 	}
 	
-	m->shift_register.value_ages = 0; //TODO: create a 0 initialized stretchy buf based on the number of buckets
+	m->shift_register.value_ages = NULL; //uninitialized buffer. will contain a age value for each bucket
 	
 	m->shift_register.value_range = value_range;
 	m->shift_register.odds = odds;
