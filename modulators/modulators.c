@@ -1,3 +1,5 @@
+//todo: use one ValueRange struct definition to generate value ranges for acceleration deceleration, etc. nstead of defining a new struct for basically the same thing.
+
 typedef enum ModulatorType {
 	WAVE,
 	SCALARSPRING,
@@ -5,6 +7,11 @@ typedef enum ModulatorType {
 	NEWTONIAN,
 	SHIFTREGISTER
 }ModulatorType;
+
+typedef struct ValueRange {
+	float min;
+	float max;
+}ValueRange;
 
 //
 //Modulator types
@@ -30,44 +37,18 @@ typedef struct ModScalarSpring {
 	bool enabled;
 }ModScalarSpring;
 
-typedef struct PauseRange {
-	float min;
-	float max;
-}PauseRange;
-
-typedef struct Region {
-	float min;
-	float max;
-}Region;
-
-
 typedef struct ModScalarGoalFollower{
-	Region *regions;
+	ValueRange *regions;
 	bool random_region;
 	float threshold;
 	float vel_threshold;
-	PauseRange pause_range;
+	ValueRange pause_range;
 	Modulator *follower; 
 	size_t current_region;
 	uint64_t paused_left;
 	uint64_t time;
 	bool enabled;
 }ModScalarGoalFollower;
-
-typedef struct SpeedLimitRange {
-	float min;
-	float max;
-}SpeedLimitRange;
-
-typedef struct AccelerationRange {
-	float min;
-	float max;
-}AccelerationRange;
-
-typedef struct DecelerationRange {
-	float min;
-	float max;
-}DecelerationRange;
 
 typedef struct PhaseTime {
 	float acceleration;
@@ -76,9 +57,9 @@ typedef struct PhaseTime {
 }PhaseTime;
 
 typedef struct ModNewtonian {
-	SpeedLimitRange speed_limit_range;
-	AccelerationRange acceleration_range;
-	DecelerationRange deceleration_range;
+	ValueRange speed_limit_range;
+	ValueRange acceleration_range;
+	ValueRange deceleration_range;
 	float goal;
 	float value;
 	uint64_t time;
@@ -97,22 +78,12 @@ typedef enum ShiftRegisterInterp{
 	NONE
 }ShiftRegisterInterp;
 
-typedef struct ValueRange {
-	float min;
-	float max;
-}ValueRange;
-
-typedef struct AgeRange {
-	uint32_t min;
-	uint32_t max;
-}AgeRange;
-
 typedef struct ModShiftRegister {
 	float *buckets; 
 	uint32_t *value_ages;
 	ValueRange value_range;
 	float odds;
-	AgeRange age_range;
+	ValueRange age_range;
 	float period;
 	ShiftRegisterInterp interp;
 	uint64_t time;
@@ -181,7 +152,7 @@ Modulator *scalar_goal_follower(const char *name) {
 	return m;
 }
 
-Modulator *newtonian(const char *name, SpeedLimitRange speed_limit_range, AccelerationRange acceleration_range, DecelerationRange deceleration_range, float initial) {
+Modulator *newtonian(const char *name, ValueRange speed_limit_range, ValueRange acceleration_range, ValueRange deceleration_range, float initial) {
 	Modulator *m = new_modulator(name, NEWTONIAN);
 	m->newtonian.speed_limit_range = speed_limit_range;
 	m->newtonian.acceleration_range = acceleration_range;
@@ -246,7 +217,6 @@ size_t previous_bucket(Modulator *m, size_t index) {
 Modulator *shift_register(const char *name, size_t buckets, ValueRange value_range, float odds, float period, ShiftRegisterInterp interp) {
 	Modulator *m = new_modulator(name, SHIFTREGISTER);
 	
-
 	m->shift_register.buckets = NULL; 
 	new_buckets(m->shift_register.buckets, buckets, value_range);
 	
@@ -262,7 +232,7 @@ Modulator *shift_register(const char *name, size_t buckets, ValueRange value_ran
 	
 	m->shift_register.value_range = value_range;
 	m->shift_register.odds = odds;
-	m->shift_register.age_range = (AgeRange){ UINT32_MAX, UINT32_MAX };  
+	m->shift_register.age_range = (ValueRange){ UINT32_MAX, UINT32_MAX };  
 	m->shift_register.period = period;
 	m->shift_register.interp = interp;
 	m->shift_register.time = 0;

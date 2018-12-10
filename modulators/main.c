@@ -31,9 +31,9 @@ void modulator_test() {
 	Modulator *m2 = scalar_spring("spring_1", 1, 1, 1);
 	Modulator *m3 = scalar_goal_follower("follow_1");
 
-	SpeedLimitRange s_limit_range_1 = { 0.5, 1 };
-	AccelerationRange a_range_1 = { 0.1, 1 };
-	DecelerationRange d_range_1 = { 0.1, 1 };
+	ValueRange s_limit_range_1 = { 0.5, 1 };
+	ValueRange a_range_1 = { 0.1, 1 };
+	ValueRange d_range_1 = { 0.1, 1 };
 	Modulator *m4 = newtonian("newtonian_1", s_limit_range_1, a_range_1, d_range_1, 0.5);
 
 
