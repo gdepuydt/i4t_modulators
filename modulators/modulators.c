@@ -200,7 +200,9 @@ Modulator *newtonian(const char *name, SpeedLimitRange speed_limit_range, Accele
 
 void new_buckets(float *buffer, size_t buckets, ValueRange value_range) {
 	for (int current_bucket = 0; current_bucket < buckets; current_bucket++) {
-		buf_push(buffer, value_range.max); //not correct: must be random value wwihin the provided range for each bucket!
+		float range = value_range.max - value_range.min;
+		float x = ((float)rand() / (float)(RAND_MAX / range)) + value_range.min; //TODO: test this!
+		buf_push(buffer, x); 
 	}
 }
 
@@ -212,7 +214,7 @@ Modulator *shift_register(const char *name, size_t buckets, ValueRange value_ran
 	new_buckets(m->shift_register.buckets, buckets, value_range);
 	float v;
 	if (buf_len(m->shift_register.buckets) > 0) {
-		 v = m->shift_register.buckets[0]; //not correct, must be the random value 
+		 v = m->shift_register.buckets[0]; 
 	}
 	else {
 		v = 0.0;
