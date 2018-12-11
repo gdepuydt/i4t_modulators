@@ -292,6 +292,43 @@ Modulator *shift_register(const char *name, size_t buckets, ValueRange value_ran
 	m->shift_register.value = v;
 }
 
+typedef struct ModulatorEnvironment {
+	const char* name;
+	Map modulator_map;
+	Modulator **modulator_list;
+} ModulatorEnvironment;
+
+Map env_map;
+ModulatorEnvironment **mod_env_list;
+
+Modulator *get_env_mod(ModulatorEnvironment *env, const char *mod_name) {
+	return map_get(&env->modulator_map, mod_name);
+}
+
+void add_env(ModulatorEnvironment *env) {
+	ModulatorEnvironment *old_mod_env = map_get(&env_map, env->name);
+	if(old_mod_env != env) {
+		assert(!old_mod_env);
+		map_put(&env_map, env->name, env);
+		buf_push(mod_env_list, env);
+	}
+}
+
+void add_env_mod(ModulatorEnvironment *env, Modulator *mod) {
+	Modulator *old_mod = map_get(&env->modulator_map, mod->name);
+	if(!old_mod) {
+		map_put(&env->modulator_map, mod->name, mod);
+		buf_push(env->modulator_list, mod);
+		return;
+	}
+	else if (old_mod == mod) {
+		return;
+	}
+	else exit(1);
+} 
+
+
+
 Modulator *modulator(const char *name, Modulator **env) {
 	for (Modulator **it = env; it != buf_end(env); it++) {
 		Modulator *mod = *it;

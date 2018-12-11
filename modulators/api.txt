@@ -1,0 +1,22 @@
+API specs:
+-be able to create modulators of a certain type directly. eg. Wave(), BitShifter();
+-Be able to add these modulators to a unique environment/container.
+    an environment is at it's core a hashmap of different modulators.
+    the function for adding a modulator to an  environment (existing or new) is as follows:
+        void add_modulator(const char *name, Modulator *mod);
+
+        First, this method will look if there's already an environment with that name.
+        If such environment already exists, cif the modulator is already in that environment, do nothing.
+        otherwise  add the modulator reference to the environment
+        If no environment exists with that name, a new environment is created and the modulator is added to the new environment
+
+        Note that the environment is itself part of a hashmap
+
+        environment_map -> hashmap of environments
+
+        environment -> hashmap  of modulators
+        there can be more than one environment, all with a unique key.
+        There can however be only one environment_map (so this datastructure should be hidden from the user)
+
+        
+         
