@@ -41,10 +41,22 @@ void modulator_test() {
 
 	add_modulator("env1", m1);
 	add_modulator("env1", m2);
-	add_modulator("env1", m1);
+	add_modulator("env1", m3);
 	add_modulator("env2", m4);
 	add_modulator("env3", m5);
 
+	for (int i = 0; i < env_map.cap; i++) {
+		if (env_map.keys[i]) {
+			ModulatorEnvironment *env = ((ModulatorEnvironment*)env_map.vals[i]);
+			printf("Environment: \"%s\"\n", env->name);
+			for (int j = 0; j < env->modulator_map.cap; j++) {
+				if (env->modulator_map.keys[j]) {
+					Modulator *mod = (Modulator*)env->modulator_map.vals[j];
+					printf("	Modulator: \"%s\"\n",mod->name);
+				}
+			}
+		}
+	}
 }
 
 void main() {
