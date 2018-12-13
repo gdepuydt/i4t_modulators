@@ -295,48 +295,31 @@ Modulator *shift_register(const char *name, size_t buckets, ValueRange value_ran
 typedef struct ModulatorEnvironment {
 	const char* name;
 	Map modulator_map;
-	Modulator **modulator_list;
 } ModulatorEnvironment;
 
 Map env_map;
-ModulatorEnvironment **mod_env_list;
 
-Modulator *get_env_mod(ModulatorEnvironment *env, const char *mod_name) {
-	return map_get(&env->modulator_map, mod_name);
+ModulatorEnvironment *create_environment(const char *environment_name) {
+	ModulatorEnvironment *new_env = xmalloc(sizeof(ModulatorEnvironment));
+	new_env->name = environment_name;
+	new_env->modulator_map.len = 0;
+	new_env->modulator_map.cap = 0;
+	new_env->modulator_map.keys = 0;
+	new_env->modulator_map.vals = 0;
+
+	return new_env;
 }
 
-void add_env(ModulatorEnvironment *env) {
-	ModulatorEnvironment *old_mod_env = map_get(&env_map, env->name);
-	if(old_mod_env != env) {
-		assert(!old_mod_env);
-		map_put(&env_map, env->name, env);
-		buf_push(mod_env_list, env);
+void add_modulator(const char *environment_name, Modulator *modulator) {
+	ModulatorEnvironment *env = map_get(&env_map, environment_name);
+	if (env) {
+		map_put(&env->modulator_map, modulator->name, modulator);
 	}
-}
-
-void add_env_mod(ModulatorEnvironment *env, Modulator *mod) {
-	Modulator *old_mod = map_get(&env->modulator_map, mod->name);
-	if(!old_mod) {
-		map_put(&env->modulator_map, mod->name, mod);
-		buf_push(env->modulator_list, mod);
-		return;
+	else {
+		ModulatorEnvironment *new_env = create_environment(environment_name);
+		map_put(&env_map, new_env->name, new_env);
+		map_put(&new_env->modulator_map, modulator->name, modulator);
 	}
-	else if (old_mod == mod) {
-		return;
-	}
-	else exit(1);
-} 
-
-
-
-Modulator *modulator(const char *name, Modulator **env) {
-	for (Modulator **it = env; it != buf_end(env); it++) {
-		Modulator *mod = *it;
-		if (strcmp(mod->name, name) == 0) {
-			return mod;
-		}
-	}
-	return NULL;
 }
 
 

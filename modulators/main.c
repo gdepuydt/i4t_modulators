@@ -26,8 +26,6 @@ void modulator_test() {
 	//Each modifier has a unique name by which you can identify it 
 	//
 
-	Modulator **env1 = NULL; //List of pointers to modulators 
-
 	Modulator *m1 = wave_modulator("wave_1", 1, 0.5);
 	Modulator *m2 = scalar_spring("spring_1", 1, 1, 1);
 	Modulator *m3 = scalar_goal_follower("follow_1");
@@ -40,19 +38,13 @@ void modulator_test() {
 
 	ValueRange v_range_1 = { 0, 1 };
 	Modulator *m5 = shift_register("shift_1", 8, v_range_1, 0.2, 0.5, QUADRATIC);
-	buf_push(env1, m1);
-	buf_push(env1, m2);
-	buf_push(env1, m3);
-	buf_push(env1, m4);
-	buf_push(env1, m5);
 
+	add_modulator("env1", m1);
+	add_modulator("env1", m2);
+	add_modulator("env1", m1);
+	add_modulator("env2", m4);
+	add_modulator("env3", m5);
 
-	for (Modulator **it = env1; it != buf_end(env1); it++) {
-		Modulator *mod = *it;
-		printf("%s\n", mod->name);
-	}
-
-	printf("print name of modulator follow_1:\n%s", modulator("follow_1", env1)->name);
 }
 
 void main() {
