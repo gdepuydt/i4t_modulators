@@ -300,13 +300,8 @@ typedef struct ModulatorEnvironment {
 Map env_map;
 
 ModulatorEnvironment *create_environment(const char *environment_name) {
-	ModulatorEnvironment *new_env = xmalloc(sizeof(ModulatorEnvironment));
+	ModulatorEnvironment *new_env = xcalloc(1, sizeof(ModulatorEnvironment));
 	new_env->name = environment_name;
-	new_env->modulator_map.len = 0;
-	new_env->modulator_map.cap = 0;
-	new_env->modulator_map.keys = 0;
-	new_env->modulator_map.vals = 0;
-
 	return new_env;
 }
 
