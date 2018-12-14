@@ -1,5 +1,3 @@
-//todo: use one ValueRange struct definition to generate value ranges for acceleration deceleration, etc. nstead of defining a new struct for basically the same thing.
-
 typedef enum ModulatorType {
 	WAVE,
 	SCALARSPRING,
@@ -14,7 +12,7 @@ typedef struct ValueRange {
 }ValueRange;
 
 //
-//Modulator types
+//Modulator structs
 //
 
 typedef struct Modulator Modulator;
@@ -71,7 +69,6 @@ typedef struct ModNewtonian {
 	PhaseTime phase;
 }ModNewtonian;
 
-
 typedef enum ShiftRegisterInterp{
 	LINEAR,
 	QUADRATIC,
@@ -91,8 +88,19 @@ typedef struct ModShiftRegister {
 	bool enabled;
 }ModShiftRegister;
 
+typedef struct ModulatorFunctions {
+	float(*value)(Modulator *);
+	ValueRange(*range)(Modulator *);
+	float(*goal)(Modulator *);
+	void(*set_goal)(Modulator *, float);
+	uint64_t(*elapsed_us)(Modulator *);
+	bool(*enabled)(Modulator *);
+	void(*set_enabled)(Modulator *, bool);
+	void(*advance)(Modulator *, uint64_t);
+} ModulatorFunctions;
 
 typedef struct Modulator {
+	const ModulatorFunctions * const modulator_functions;
 	const char *name;
 	ModulatorType type;
 	union {
@@ -105,19 +113,236 @@ typedef struct Modulator {
 }Modulator;
 
 //
-//Modulator memory management
+//public API functions that need to be implemented by all Modulator types
+//
+
+inline float value(Modulator *m) { return m->modulator_functions->value(m); }
+inline ValueRange range(Modulator *m) { return m->modulator_functions->range(m); }
+inline float goal(Modulator *m) { return m->modulator_functions->goal(m); }
+inline void set_goal(Modulator *m, float f) { m->modulator_functions->set_goal(m, f); }
+inline uint64_t elapsed_us(Modulator *m) { return m->modulator_functions->elapsed_us(m); }
+inline bool enabled(Modulator *m) { return m->modulator_functions->enabled(m); }
+inline void set_enabled(Modulator *m, bool enabled) { m->modulator_functions->set_enabled(m, enabled); }
+inline void advance(Modulator *m, uint64_t dt) { m->modulator_functions->advance(m, dt); }
+
+//
+//private implementations of the different ModulatorFunctions
+//
+
+//--wave modulator--
+
+float wave_val(Modulator *m) {
+	printf("This is the wave_val function!\n");
+	return 0;
+}
+ValueRange wave_range(Modulator *m) {
+	printf("This is the wave_range function!\n");
+	ValueRange r = { 0.0, 1.0 };
+	return r;
+}
+
+float wave_goal(Modulator *m) {
+	printf("This is the wave_goal function!\n");
+	return 0;
+}
+
+void wave_set_goal(Modulator *m, float f) {
+	printf("This is the wave_set_goal function!\n");
+}
+
+uint64_t wave_elapsed_us(Modulator *m) {
+	printf("This is the wave_elapsed_us function!\n");
+	return 0;
+}
+
+bool wave_enabled(Modulator *m) {
+	printf("This is the wave_enabled function!\n");
+	return 0;
+}
+
+void wave_set_enabled(Modulator *m, bool enabled) {
+	printf("This is the wave_set_enabled function!\n");
+}
+
+void wave_advance(Modulator *m, uint64_t dt) {
+	printf("This is the wave_advanced function!\n");
+}
+
+//--ScalarSpring
+
+float scalar_spring_val(Modulator *m) {
+	printf("This is the scalar_spring_val function!\n");
+	return 0;
+}
+ValueRange scalar_spring_range(Modulator *m) {
+	printf("This is the scalar_spring_range function!\n");
+	ValueRange r = { 0.0, 1.0 };
+	return r;
+}
+
+float scalar_spring_goal(Modulator *m) {
+	printf("This is the scalar_spring_goal function!\n");
+	return 0;
+}
+
+void scalar_spring_set_goal(Modulator *m, float f) {
+	printf("This is the scalar_spring_set_goal function!\n");
+}
+
+uint64_t scalar_spring_elapsed_us(Modulator *m) {
+	printf("This is the scalar_spring_elapsed_us function!\n");
+	return 0;
+}
+
+bool scalar_spring_enabled(Modulator *m) {
+	printf("This is the scalar_spring_enabled function!\n");
+	return 0;
+}
+
+void scalar_spring_set_enabled(Modulator *m, bool enabled) {
+	printf("This is the scalar_spring_set_enabled function!\n");
+}
+
+void scalar_spring_advance(Modulator *m, uint64_t dt) {
+	printf("This is the scalar_spring_advanced function!\n");
+}
+
+//--ScalarGoalFollower
+
+float scalar_goal_follower_val(Modulator *m) {
+	printf("This is the scalar_goal_follower_val function!\n");
+	return 0;
+}
+ValueRange scalar_goal_follower_range(Modulator *m) {
+	printf("This is the scalar_goal_follower_range function!\n");
+	ValueRange r = { 0.0, 1.0 };
+	return r;
+}
+
+float scalar_goal_follower_goal(Modulator *m) {
+	printf("This is the scalar_goal_follower_goal function!\n");
+	return 0;
+}
+
+void scalar_goal_follower_set_goal(Modulator *m, float f) {
+	printf("This is the scalar_goal_follower_set_goal function!\n");
+}
+
+uint64_t scalar_goal_follower_elapsed_us(Modulator *m) {
+	printf("This is the scalar_goal_follower_elapsed_us function!\n");
+	return 0;
+}
+
+bool scalar_goal_follower_enabled(Modulator *m) {
+	printf("This is the scalar_goal_follower_enabled function!\n");
+	return 0;
+}
+
+void scalar_goal_follower_set_enabled(Modulator *m, bool enabled) {
+	printf("This is the scalar_goal_follower_set_enabled function!\n");
+}
+
+void scalar_goal_follower_advance(Modulator *m, uint64_t dt) {
+	printf("This is the scalar_goal_follower_advanced function!\n");
+}
+
+//--Newtonian
+
+float newtonian_val(Modulator *m) {
+	printf("This is the newtonian_val function!\n");
+	return 0;
+}
+ValueRange newtonian_range(Modulator *m) {
+	printf("This is the newtonian_range function!\n");
+	ValueRange r = { 0.0, 1.0 };
+	return r;
+}
+
+float newtonian_goal(Modulator *m) {
+	printf("This is the newtonian_goal function!\n");
+	return 0;
+}
+
+void newtonian_set_goal(Modulator *m, float f) {
+	printf("This is the newtonian_set_goal function!\n");
+}
+
+uint64_t newtonian_elapsed_us(Modulator *m) {
+	printf("This is the newtonian_elapsed_us function!\n");
+	return 0;
+}
+
+bool newtonian_enabled(Modulator *m) {
+	printf("This is the newtonian_enabled function!\n");
+	return 0;
+}
+
+void newtonian_set_enabled(Modulator *m, bool enabled) {
+	printf("This is the newtonian_set_enabled function!\n");
+}
+
+void newtonian_advance(Modulator *m, uint64_t dt) {
+	printf("This is the newtonian_advanced function!\n");
+}
+
+//--ShiftRegister
+
+float shiftregister_val(Modulator *m) {
+	printf("This is the shiftregister_val function!\n");
+	return 0;
+}
+ValueRange shiftregister_range(Modulator *m) {
+	printf("This is the shiftregister_range function!\n");
+	ValueRange r = { 0.0, 1.0 };
+	return r;
+}
+
+float shiftregister_goal(Modulator *m) {
+	printf("This is the shiftregister_goal function!\n");
+	return 0;
+}
+
+void shiftregister_set_goal(Modulator *m, float f) {
+	printf("This is the shiftregister_set_goal function!\n");
+}
+
+uint64_t shiftregister_elapsed_us(Modulator *m) {
+	printf("This is the shiftregister_elapsed_us function!\n");
+	return 0;
+}
+
+bool shiftregister_enabled(Modulator *m) {
+	printf("This is the shiftregister_enabled function!\n");
+	return 0;
+}
+
+void shiftregister_set_enabled(Modulator *m, bool enabled) {
+	printf("This is the shiftregister_set_enabled function!\n");
+}
+
+void shiftregister_advance(Modulator *m, uint64_t dt) {
+	printf("This is the shiftregister_advanced function!\n");
+}
+
+
+//
+//Modulator constructor and helper functions
 //
 
 
-Modulator *new_modulator(const char *name, ModulatorType type) {
+Modulator *new_modulator(const char *name, ModulatorType type, ModulatorFunctions *wave_functions) {
 	Modulator *mod = xmalloc(sizeof(Modulator));
+	memcpy(&mod->modulator_functions, &wave_functions, sizeof(wave_functions));
 	mod->name = name;
 	mod->type = type;
 	return mod;
 }
 
 Modulator *wave_modulator(const char *name, float amplitude, float frequency) {
-	Modulator *m = new_modulator(name, WAVE);
+	static const ModulatorFunctions wave_functions = {
+		wave_val, wave_range, wave_goal, wave_set_goal, wave_elapsed_us, wave_enabled, wave_set_enabled, wave_advance
+	};
+	Modulator *m = new_modulator(name, WAVE, &wave_functions);
 	m->wave.amplitude = amplitude;
 	m->wave.frequency = frequency;
 	m->wave.time = 0;
@@ -127,7 +352,10 @@ Modulator *wave_modulator(const char *name, float amplitude, float frequency) {
 }
 
 Modulator *scalar_spring(const char *name, float smooth, float undamp, float initial) {
-	Modulator *m = new_modulator(name, SCALARSPRING);
+	static const ModulatorFunctions scalar_spring_functions = {
+	scalar_spring_val, scalar_spring_range, scalar_spring_goal, scalar_spring_set_goal, scalar_spring_elapsed_us, scalar_spring_enabled, scalar_spring_set_enabled, scalar_spring_advance
+	};
+	Modulator *m = new_modulator(name, SCALARSPRING, &scalar_spring_functions);
 	m->scalar_spring.smooth = smooth;
 	m->scalar_spring.undamp = undamp;
 	m->scalar_spring.goal = initial;
@@ -138,7 +366,10 @@ Modulator *scalar_spring(const char *name, float smooth, float undamp, float ini
 }
 
 Modulator *scalar_goal_follower(const char *name) {
-	Modulator *m = new_modulator(name, SCALARGOALFOLLOWER);
+	static const ModulatorFunctions scalar_goal_follower_functions = {
+	scalar_goal_follower_val, scalar_goal_follower_range, scalar_goal_follower_goal, scalar_goal_follower_set_goal, scalar_goal_follower_elapsed_us, scalar_goal_follower_enabled, scalar_goal_follower_set_enabled, scalar_goal_follower_advance
+	};
+	Modulator *m = new_modulator(name, SCALARGOALFOLLOWER, &scalar_goal_follower_functions);
 	m->scalar_goal_follower.regions= NULL; //array of arrays
 	m->scalar_goal_follower.random_region = false;
 	m->scalar_goal_follower.threshold = 0.01;
@@ -195,7 +426,10 @@ void move_to(Modulator *m, float goal) {
 
 
 Modulator *newtonian(const char *name, ValueRange speed_limit_range, ValueRange acceleration_range, ValueRange deceleration_range, float initial) {
-	Modulator *m = new_modulator(name, NEWTONIAN);
+	static const ModulatorFunctions newtonian_functions = {
+	newtonian_val, newtonian_range, newtonian_goal, newtonian_set_goal, newtonian_elapsed_us, newtonian_enabled, newtonian_set_enabled, newtonian_advance
+	};
+	Modulator *m = new_modulator(name, NEWTONIAN, &newtonian_functions);
 	m->newtonian.speed_limit_range = speed_limit_range;
 	m->newtonian.acceleration_range = acceleration_range;
 	m->newtonian.deceleration_range = deceleration_range;
@@ -268,7 +502,10 @@ size_t previous_bucket(Modulator *m, size_t index) {
 
 
 Modulator *shift_register(const char *name, size_t buckets, ValueRange value_range, float odds, float period, ShiftRegisterInterp interp) {
-	Modulator *m = new_modulator(name, SHIFTREGISTER);
+	static const ModulatorFunctions shift_register_functions = {
+	shiftregister_val, shiftregister_range, shiftregister_goal, shiftregister_set_goal, shiftregister_elapsed_us, shiftregister_enabled, shiftregister_set_enabled, shiftregister_advance
+	};
+	Modulator *m = new_modulator(name, SHIFTREGISTER, &shift_register_functions);
 	
 	m->shift_register.buckets = NULL; 
 	new_buckets(m->shift_register.buckets, buckets, value_range);
@@ -291,6 +528,10 @@ Modulator *shift_register(const char *name, size_t buckets, ValueRange value_ran
 	m->shift_register.time = 0;
 	m->shift_register.value = v;
 }
+
+//
+//ModulatorEnvirnment HashMap for managing Modulators
+//
 
 typedef struct ModulatorEnvironment {
 	const char* name;
@@ -316,6 +557,3 @@ void add_modulator(const char *environment_name, Modulator *modulator) {
 		map_put(&new_env->modulator_map, modulator->name, modulator);
 	}
 }
-
-
-
