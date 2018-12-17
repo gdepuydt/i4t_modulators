@@ -355,12 +355,55 @@ float gen_value(ValueRange range) {
 }
 
 void calculate_events(Modulator *m) {
-	if (m->type == NEWTONIAN) {
-		float x = m->newtonian.goal - m->newtonian.f;
-	}
+	assert(m->type == NEWTONIAN);
+	float x = abs(m->newtonian.goal - m->newtonian.f);
+
+	float a = 0.0;
 	if (m->newtonian.a < FLT_EPSILON) {
-		//TODO
+		a = m->newtonian.a;
 	}
+	else {
+		a = 1000000.0;
+	}
+	float d = 0.0;
+	if (m->newtonian.d > FLT_EPSILON) {
+		d = m->newtonian.d;
+	}
+	else {
+		d = 1000000.0;
+	}
+	float r = a / d;
+
+	m->newtonian.phase.acceleration = sqrtf((x * 2.0 / (a * (1.0 + r))));
+
+	float v = a * m->newtonian.phase.acceleration;
+	if (v > m->newtonian.s) {
+		v = m->newtonian.s;
+		m->newtonian.phase.acceleration = m->newtonian.s / a;
+	}
+	else {
+		m->newtonian.s = v;
+	}
+
+	m->newtonian.phase.deceleration = m->newtonian.phase.acceleration * r;
+
+	float d0 = m->newtonian.phase.acceleration *  m->newtonian.phase.acceleration * a * 0.5;
+	float d2 = m->newtonian.phase.deceleration *  m->newtonian.phase.deceleration * d * 0.5;
+
+	m->newtonian.phase.sustain = (x - d0 - d2) / v;
+
+	if (m->newtonian.goal > m->newtonian.f) {
+		m->newtonian.a = a;
+		m->newtonian.d = -d;
+	}
+	else {
+		m->newtonian.s = -m->newtonian.s;
+		m->newtonian.a = -a;
+		m->newtonian.d = d;
+	}
+
+	m->newtonian.phase.sustain = m->newtonian.phase.acceleration + m->newtonian.phase.sustain;
+	m->newtonian.phase.deceleration = m->newtonian.phase.sustain + m->newtonian.phase.deceleration;
 }
 
 void move_to(Modulator *m, float goal) {
@@ -441,50 +484,39 @@ void new_buckets(float *buffer, size_t buckets, ValueRange value_range) {
 
 // Total time of a shift register loop (period) in microseconds
 uint64_t total_period(Modulator *m) {
-	if (m->type == SHIFTREGISTER) {
-		return (uint64_t)(m->shift_register.period * 1000000.0);
-	}
-	exit(1); //TODO: better error handling
+	assert(m->type == SHIFTREGISTER);
+	return (uint64_t)(m->shift_register.period * 1000000.0);
 }
 
 // Time spent visiting a bucket, in microseconds
 uint64_t bucket_period(Modulator *m) {
-	if (m->type == SHIFTREGISTER) {
-		size_t n = buf_len(m->shift_register.buckets);
-		if (n > 0) {
-			return (uint64_t)(total_period(m) / n);
-		}
-		else return 0;
+	assert(m->type == SHIFTREGISTER);
+	size_t n = buf_len(m->shift_register.buckets);
+	if (n > 0) {
+		return (uint64_t)(total_period(m) / n);
 	}
-	exit(1);
+	else return 0;
 }
 
 // Return the bucket index after the one we are given
 size_t next_bucket(Modulator *m, size_t index) {
-	if (m->type == SHIFTREGISTER) {
-		size_t len = buf_len(m->shift_register.buckets);
-		if (len > 0) {
-			if (index < len - 1) {
-				return index + 1;
-			}
+	assert(m->type == SHIFTREGISTER);
+	size_t len = buf_len(m->shift_register.buckets);
+	if (len > 0) {
+		if (index < len - 1) {
+			return index + 1;
 		}
 	}
-	exit(1);
 }
 
 // Return the bucket index before the one we are given
-size_t previous_bucket(Modulator *m, size_t index) {
-	if (m->type == SHIFTREGISTER) {
-		size_t len = buf_len(m->shift_register.buckets);
-		if (len > 0) {
-			if (index > 0 && index < len) {
-				return index - 1;
-			}
-			else return len - 1;
-		}
-		return NULL; //TODO: not sure this is good practice --> maybe do fatal error here?
+size_t previous_bucket(Modulator *m, size_t index, size_t n) {
+	assert(m->type == SHIFTREGISTER);
+	assert(n > 0);
+	if (index > 0 && index < n) {
+		return index - 1;
 	}
-	exit(1);
+	else return n - 1;
 }
 
 
@@ -515,7 +547,71 @@ void shiftregister_set_enabled(Modulator *m, bool enabled) {
 }
 
 void shiftregister_advance(Modulator *m, uint64_t dt) {
-	//TODO
+	size_t n = buf_len(m->shift_register.buckets);
+	uint64_t p = total_period(m);
+	uint64_t bp = bucket_period(m);
+	if (n == 0 || p == 0 || bp == 0) {
+		return;
+	}
+	
+	uint64_t pt = m->shift_register.time % p; //convert accumulated time into period time
+	size_t bi = (size_t)(MIN((size_t)(pt / bp), n - 1)); //current bucket in period
+
+	uint64_t bt = pt - bp * bi; //time aready spent visiting the current bucket
+	uint64_t r = (bt + dt) / bp; //number of buckets we are going to visit
+
+	for (int i = 0; i < r; i++) {
+		size_t bh = previous_bucket(m, bi, n);
+		float odds = (float)(MIN(MAX(0.0, m->shift_register.odds), 1.0));
+
+		if (m->shift_register.value_ages[bh] >= m->shift_register.age_range.min && m->shift_register.age_range.min < m->shift_register.age_range.max) {
+			float t = MIN((float)(m->shift_register.value_ages[bh] - m->shift_register.age_range.min) / (m->shift_register.age_range.max - m->shift_register.age_range.min),  1.0);
+			odds = odds + (1.0 - odds) * t;
+		}
+		
+		if (RND() < odds) {
+			m->shift_register.buckets[bh] = RNDRNG(m->shift_register.age_range.min, m->shift_register.age_range.max);
+			m->shift_register.value_ages[bh] = 0;
+		}
+		else {
+			m->shift_register.value_ages[bh] += 1;
+		}
+
+		bi = next_bucket(m, bi, n);
+	}
+
+	m->shift_register.time += dt;
+	switch (m->shift_register.interp) {
+	case(QUADRATIC): {
+		size_t bh = previous_bucket(m, bi, n);
+		size_t bj = next_bucket(m, bi, n);
+
+		float v1 = m->shift_register.buckets[bi];
+		float v0 = (m->shift_register.buckets[bh] + v1) * 0.5;
+		float v2 = (m->shift_register.buckets[bj] + v1) * 0.5;
+
+		uint64_t bt = (uint64_t)(m->shift_register.time % p - bp * bi);
+		float tt = (float)bt / (float)bp;
+		
+		float a0 = v0 + (v1 - v0) * tt;
+		float a1 = v1 + (v2 + v1) * tt;
+
+		m->shift_register.value = a0 + (a1 - a0) * tt;
+		break;
+	}
+	case(LINEAR): {
+		float v0 = m->shift_register.buckets[bi];
+		float v1 = next_bucket(m, bi, n);
+		uint64_t bt = (uint64_t)(m->shift_register.time % p - bp * bi);
+		m->shift_register.value = v0 + (v1 - v0) * ((float)bt / (float)bp);
+		break;
+	}
+		
+	case(NONE):
+	default:
+		m->shift_register.value = m->shift_register.buckets[bi];
+		break;
+	}
 }
 
 
