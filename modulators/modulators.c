@@ -261,7 +261,11 @@ void set_new_goal(Modulator *m) {
 
 
 float scalar_goal_follower_val(Modulator *m) {
-	return value(m->scalar_goal_follower.follower);
+	if (m->scalar_goal_follower.follower) {
+		return value(m->scalar_goal_follower.follower);
+	}
+	else return 0.0;
+	
 }
 
 ValueRange scalar_goal_follower_range(Modulator *m) {
@@ -620,9 +624,9 @@ void shiftregister_advance(Modulator *m, uint64_t dt) {
 //
 
 
-Modulator *new_modulator(const char *name, ModulatorType type, ModulatorFunctions *wave_functions) {
-	Modulator *mod = xmalloc(sizeof(Modulator));
-	memcpy(&mod->modulator_functions, &wave_functions, sizeof(wave_functions));
+Modulator *new_modulator(const char *name, ModulatorType type, ModulatorFunctions *functions) {
+	Modulator *mod = xcalloc(1, sizeof(Modulator));
+	memcpy(&mod->modulator_functions, &functions, sizeof(functions));
 	mod->name = name;
 	mod->type = type;
 	return mod;
